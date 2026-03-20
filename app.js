@@ -6,6 +6,9 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const { sequelize } = require('./models');
 
+var http = require('http');
+var { Server } = require("socket.io");
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var chatWithAiRouter = require('./routes/chatWithAiRouter');
@@ -42,6 +45,42 @@ app.use('/users', usersRouter);
 app.use('/api', chatWithAiRouter);
 app.use('/conversation', conversationRouter);
 
+// ✅ CREATE SERVER (IMPORTANT)
+const server = http.createServer(app);
+
+
+// ✅ SOCKET.IO SETUP
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+app.set("io", io);
+
+
+// ✅ SOCKET EVENTS
+io.on("connection", (socket) => {
+  console.log("✅ User connected:", socket.id);
+
+  socket.on("send_message", (data) => {
+    try {
+      console.log("📩 message:", data);
+
+      // example emit
+      // io.to(data.socketId).emit("receive_message", data.message);
+
+    } catch (err) {
+      console.error("❌ Socket error:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("⚠️ User disconnected:", socket.id);
+  });
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
@@ -58,4 +97,11 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+// ✅ START SERVER HERE (IMPORTANT)
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// module.exports = app;
