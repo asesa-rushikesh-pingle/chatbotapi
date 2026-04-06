@@ -3,6 +3,15 @@ var router = express.Router();
 const { User } = require("../models");
 const multer  = require('multer')
 const bcrypt = require('bcrypt');
+const crypto = require("crypto");
+const Razorpay = require("razorpay");
+
+const razorpay = new Razorpay({
+  key_id: "rzp_test_SZJs8LheVmP8lm",
+  key_secret: "sUV0Ln2hRvLhVP6JtVOQXupw",
+  
+});
+const WEBHOOK_SECRET = "mySuperSecret123@razorpay";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -248,6 +257,145 @@ router.post('/get-details',async function(req, res, next) {
   }
 
 });
+
+// create subscription api 
+// ✅ Create subscription
+router.post("/create-subscription", async (req, res) => {
+
+  const { plan_id, user_id } = req.body;
+
+  try {
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: plan_id, // 👈 your plan id
+      customer_notify: 1,
+      total_count: 100, // months (or billing cycles)
+      notes: {
+        user_id: user_id.toString(), // ✅ store user id
+      },
+    });
+
+    if(subscription){
+      res.json({
+        status : true,
+        message : 'Subscription created successfully',
+        subscription : subscription
+      })
+    }else{
+      res.json({
+        status : false,
+        message : 'Subscription failed',
+       
+      })
+    }
+
+  
+  } catch (err) {
+    console.log(err);
+    res.json({
+        status : false,
+        message : 'Subscription failed',
+        err : err
+       
+      })
+  }
+});
+
+
+// webhook functions 
+
+async function handleSubscriptionCharged(payload) {
+  try {
+    const subscription = payload.subscription.entity;
+
+    const userId = subscription.notes?.user_id;
+
+    if (!userId) {
+      console.log("❌ No user_id found in notes");
+      return;
+    }
+
+    // ✅ Update user subscription status
+    await User.update(
+      { subscription_status: subscription?.status || 'NA' },
+      { where: { id: userId } }
+    );
+
+    console.log("✅ User subscription activated:", userId);
+
+  } catch (err) {
+    console.log("❌ Error in handleSubscriptionCharged:", err);
+  }
+}
+
+
+// webhook 
+router.post("/webhook", (req, res) => {
+  try {
+    // 🔐 Verify signature
+    const signature = req.headers["x-razorpay-signature"];
+
+    const expectedSignature = crypto
+      .createHmac("sha256", WEBHOOK_SECRET)
+      .update(req.rawBody)
+      .digest("hex");
+
+    if (signature !== expectedSignature) {
+      console.log("❌ Invalid webhook signature");
+      return res.status(400).send("Invalid signature");
+    }
+
+    // ✅ Webhook verified
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    console.log("📩 Event:", event);
+
+    // 🎯 Handle events
+    switch (event) {
+      case "subscription.charged":
+        // handleSubscriptionCharged(payload);
+        handleSubscriptionCharged(payload);
+       
+        break;
+      case "subscription.activated":
+        handleSubscriptionCharged(payload);
+        break;
+      case "subscription.paused":
+        // handleSubscriptionCharged(payload);
+        handleSubscriptionCharged(payload);
+        break;
+
+          case "subscription.resumed":
+        // handleSubscriptionCharged(payload);
+        handleSubscriptionCharged(payload);
+        break;
+        
+         case "subscription.completed":
+        // handleSubscriptionCharged(payload);
+        handleSubscriptionCharged(payload);
+        break;
+
+      case "payment.failed":
+        // handlePaymentFailed(payload);
+        handleSubscriptionCharged(payload);
+        break;
+
+      case "subscription.cancelled":
+        // handleSubscriptionCancelled(payload);
+        handleSubscriptionCharged(payload);
+        break;
+
+      default:
+        console.log("⚠️ Unhandled event:", event);
+    }
+
+    res.json({ status: "ok" });
+  } catch (err) {
+    console.log("Webhook Error:", err);
+    res.status(500).send("Server error");
+  }
+});
+
 
 
 module.exports = router;

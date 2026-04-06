@@ -19,7 +19,8 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.STRING,
     pdfUrl: DataTypes.STRING,
     sitemapUrl: DataTypes.STRING,
-    socketId: DataTypes.STRING 
+    socketId: DataTypes.STRING ,
+    subscription_status: DataTypes.STRING ,
   }, {
     sequelize,
     modelName: 'User',

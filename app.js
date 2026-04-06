@@ -29,6 +29,14 @@ async function checkDatabaseConnection() {
 
 checkDatabaseConnection();
 
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
