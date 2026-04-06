@@ -74,6 +74,51 @@ router.post('/register', upload.single('uploaded_file'),async function(req, res,
 
 });
 
+// update users files and sitemap url 
+router.post('/update-user-files/:id', upload.single('uploaded_file'), async (req, res) => {
+  try {
+
+    
+    const userId = req.params.id;
+    const { sitemapUrl } = req.body;
+
+    // 🔍 Find user
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.json({
+        status: false,
+        message: "User not found"
+      });
+    }
+
+    // 📄 Handle file (pdfUrl)
+    let pdfUrl = user.pdfUrl;
+    if (req?.file?.filename) {
+      pdfUrl = req.file.filename;
+    }
+
+    // ✏️ Update only required fields
+    await user.update({
+      sitemapUrl: sitemapUrl ?? user.sitemapUrl,
+      pdfUrl: pdfUrl
+    });
+
+    return res.json({
+      status: true,
+      message: "User files updated successfully",
+      user
+    });
+
+  } catch (error) {
+    return res.json({
+      status: false,
+      message: "Error while updating user files",
+      error: error.message
+    });
+  }
+});
+
 // admin login
 router.post('/admin-login', async function(req, res, next) {
   try {
@@ -316,7 +361,9 @@ async function handleSubscriptionCharged(payload) {
 
     // ✅ Update user subscription status
     await User.update(
-      { subscription_status: subscription?.status || 'NA' },
+      { subscription_status: subscription?.status || 'NA',
+        subscription_id: subscription?.id || 'NA'
+       },
       { where: { id: userId } }
     );
 

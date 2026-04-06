@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     sitemapUrl: DataTypes.STRING,
     socketId: DataTypes.STRING ,
     subscription_status: DataTypes.STRING ,
+    subscription_id: DataTypes.STRING 
   }, {
     sequelize,
     modelName: 'User',
