@@ -5,10 +5,15 @@ const multer  = require('multer')
 const bcrypt = require('bcrypt');
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
+const axios = require("axios");
+
+
+ const key_id = "rzp_test_SZJs8LheVmP8lm";
+    const key_secret = "sUV0Ln2hRvLhVP6JtVOQXupw";
 
 const razorpay = new Razorpay({
-  key_id: "rzp_test_SZJs8LheVmP8lm",
-  key_secret: "sUV0Ln2hRvLhVP6JtVOQXupw",
+  key_id: key_id,
+  key_secret: key_secret,
   
 });
 const WEBHOOK_SECRET = "mySuperSecret123@razorpay";
@@ -344,6 +349,43 @@ router.post("/create-subscription", async (req, res) => {
       })
   }
 });
+
+router.post("/get-invoices", async (req, res) => {
+  const { subscription_id } = req.body;
+
+  try {
+   
+
+  
+
+    const response = await axios.get(
+      `https://api.razorpay.com/v1/invoices`,
+      {
+        params: { subscription_id },
+        auth: {
+          username: key_id,
+          password: key_secret,
+        },
+      }
+    );
+
+    return res.json({
+      status: true,
+      data: response.data,
+    });
+
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+
+    return res.status(500).json({
+      status: false,
+      message: "Failed to fetch invoices",
+      error: err.response?.data || err.message,
+    });
+  }
+});
+
+
 
 
 // webhook functions 
