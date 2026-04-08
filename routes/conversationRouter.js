@@ -303,12 +303,15 @@ router.get('/admin-conversation-list', async function(req, res) {
     `
     SELECT
       c.*,
+       u.username,
       m.id AS messageId,
       m.text AS messageText,
       m.status AS messageStatus,
       m.conversationId,
       m.createdAt AS messageCreatedAt
     FROM Conversations c
+    LEFT JOIN Users u 
+    ON u.id = c.userId 
     LEFT JOIN Messages m
       ON m.id = (
           SELECT id

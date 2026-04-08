@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const axios = require("axios");
+const nodemailer = require('nodemailer');
 
 
  const key_id = "rzp_test_SZJs8LheVmP8lm";
@@ -482,6 +483,38 @@ router.post("/webhook", (req, res) => {
   } catch (err) {
     console.log("Webhook Error:", err);
     res.status(500).send("Server error");
+  }
+});
+
+
+// send mail api 
+// Create transporter (use Gmail or SMTP)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'scrollosoft@gmail.com',
+    pass: 'ktec pgvz qejk cozt' // NOT your real password
+  }
+});
+
+router.post('/send-email', async (req, res) => {
+  try {
+    const { to, subject, text,html } = req.body;
+
+    const mailOptions = {
+      from: 'scrollosoft@gmail.com',
+      to,
+      subject,
+      text,
+      html
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error sending email' ,error : error.message});
   }
 });
 
