@@ -80,6 +80,46 @@ router.post('/register', upload.single('uploaded_file'),async function(req, res,
 
 });
 
+// change password
+router.post('/change-password', async function(req, res) {
+  try {
+
+    const { username, newPassword } = req.body;
+
+
+
+    // 🔍 Find user
+    const user = await User.findOne({ where: { username } });
+
+    if (!user) {
+      return res.json({
+        status: false,
+        message: "User not found"
+      });
+    }
+
+    // 🔐 Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 🔄 Update password
+    await user.update({
+      password: hashedPassword
+    });
+
+    return res.json({
+      status: true,
+      message: "Password updated successfully"
+    });
+
+  } catch (error) {
+    return res.json({
+      status: false,
+      message: "Error while updating password",
+      error: error.message
+    });
+  }
+});
+
 // update users files and sitemap url 
 router.post('/update-user-files/:id', upload.single('uploaded_file'), async (req, res) => {
   try {
@@ -87,6 +127,7 @@ router.post('/update-user-files/:id', upload.single('uploaded_file'), async (req
     
     const userId = req.params.id;
     const { sitemapUrl } = req.body;
+     const { isActive, greetingMessage,chatPosition, secondaryColor, primaryColor } = req.body;
 
     // 🔍 Find user
     const user = await User.findByPk(userId);
@@ -107,8 +148,12 @@ router.post('/update-user-files/:id', upload.single('uploaded_file'), async (req
     // ✏️ Update only required fields
     await user.update({
       sitemapUrl: sitemapUrl ?? user.sitemapUrl,
-      pdfUrl: pdfUrl
+      pdfUrl: pdfUrl,
+      isActive : Number(isActive),
+      greetingMessage : greetingMessage,chatPosition : chatPosition, secondaryColor : secondaryColor, primaryColor : primaryColor
     });
+
+    
 
     return res.json({
       status: true,
@@ -517,6 +562,9 @@ router.post('/send-email', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error sending email' ,error : error.message});
   }
 });
+
+
+// update activity staus 
 
 
 

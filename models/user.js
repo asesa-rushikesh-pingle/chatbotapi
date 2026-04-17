@@ -21,7 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     sitemapUrl: DataTypes.STRING,
     socketId: DataTypes.STRING ,
     subscription_status: DataTypes.STRING ,
-    subscription_id: DataTypes.STRING 
+    subscription_id: DataTypes.STRING ,
+    isActive: DataTypes.INTEGER ,
+    primaryColor: DataTypes.STRING ,
+    secondaryColor: DataTypes.STRING ,
+    chatPosition: DataTypes.STRING ,
+    greetingMessage: DataTypes.STRING ,
   }, {
     sequelize,
     modelName: 'User',
