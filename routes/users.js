@@ -1,12 +1,13 @@
 var express = require('express');
 var router = express.Router();
-const { User } = require("../models");
+const { User,Lead } = require("../models");
 const multer  = require('multer')
 const bcrypt = require('bcrypt');
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const axios = require("axios");
 const nodemailer = require('nodemailer');
+const db = require("../models");
 
 
  const key_id = "rzp_test_SZJs8LheVmP8lm";
@@ -516,6 +517,92 @@ router.post('/send-email', async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: 'Error sending email' ,error : error.message});
   }
+});
+
+
+// cretae lead 
+router.post("/create-lead", async (req, res) => {
+
+  const { adminId, email } = req.body;
+
+  try {
+
+    // Basic validation
+    if (!adminId || !email) {
+      return res.json({
+        status: false,
+        message: "adminId and email are required",
+      });
+    }
+
+    // Create Lead Moratio entry
+    const lead = await db.Lead.create({
+      adminId: adminId,
+      email: email,
+    });
+
+    if (lead) {
+      res.json({
+        status: true,
+        message: "Lead created successfully",
+        data: lead,
+      });
+    } else {
+      res.json({
+        status: false,
+        message: "Lead creation failed",
+      });
+    }
+
+  } catch (err) {
+    console.log(err);
+    res.json({
+      status: false,
+      message: "Lead creation failed",
+      error: err.message,
+    });
+  }
+
+});
+
+// lead listing 
+router.post("/get-leads", async (req, res) => {
+
+  const { adminId } = req.body;
+
+  try {
+
+    // Validation
+    if (!adminId) {
+      return res.json({
+        status: false,
+        message: "adminId is required",
+      });
+    }
+
+    // Fetch leads
+    const leads = await Lead.findAll({
+      where: { adminId: adminId },
+      order: [["id", "DESC"]],
+    });
+
+    
+      res.json({
+        status: true,
+        message: "Leads fetched successfully",
+        data: leads,
+      });
+   
+
+  } catch (err) {
+    console.log(err);
+    res.json({
+      status: false,
+      message: "Failed to fetch leads",
+      error: err.message,
+    });
+  }
+
 });
 
 
