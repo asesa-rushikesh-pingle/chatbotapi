@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
+    "@qdrant/js-client-rest": "^1.18.0",
     "axios": "^1.14.0",
     "bcrypt": "^6.0.0",
     "cheerio": "^1.2.0",
@@ -25,7 +26,8 @@
     "pdf-parse": "^2.4.5",
     "razorpay": "^2.9.6",
     "sequelize": "^6.37.8",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.5"
