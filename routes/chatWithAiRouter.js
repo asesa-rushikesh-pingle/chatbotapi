@@ -8,10 +8,14 @@ const { GoogleGenAI } = require("@google/genai");
 
 
 const ai = new GoogleGenAI({
-  apiKey: "AIzaSyA72I8eDr8vjZ3VV8oqK8dSAoGKsg-sd_Q"
+  apiKey: "AIzaSyA8iHL0pR2qeCrvNQOZZNW4KvbzLMKoSeQ"
 });
 
 // scrap function 
+
+// const pdfParse = require('pdf-parse');
+// const pdf = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 
 
@@ -74,57 +78,61 @@ router.post('/chat', async function (req, res, next) {
     const type = url.slice(-3).toLowerCase();
 
 
-    if (type == 'pdf') {
-     
-      console.log('finding pdf data')
-      const pdfUrl = url;
-      // // const pdfUrl = "https://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf";
+    if (type === 'pdf') {
 
-      const pdfResponse = await fetch(pdfUrl);
+      console.log('Extracting PDF text');
+  
+      // Download PDF
+      const pdfResponse = await fetch(url);
       const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
 
-      
+      const parser = new PDFParse({
+        data: pdfBuffer
+    });
+
+    const result = await parser.getText();
+  
+      // Extract text from PDF
+      // const pdfData = await pdfParse(pdfBuffer);
+//       console.log("yeyyyy",pdf);
+
+// const pdfData = await pdf(pdfBuffer);
+  
+      // Full extracted text
+      let pdfText = result.text || "";
+  
+      // Optional: limit text size
+      // Gemini still has token limits
+      pdfText = pdfText.slice(0, 500000);
+  
+      // Ask Gemini
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite-preview",
-        // contents: question
-        contents: [
-          {
-            role: "user",
-            parts: [
-               {
-              inlineData: {
-                mimeType: "application/pdf",
-                data: pdfBuffer.toString("base64")
-              }
-            },
-              {
-                text: ` 
-            question : ${question}
-            read that provided data and answer the above question. 
-            note : if you dont find any relevant data or the question is like request to connect to human or person , just response the text "CONNECTING TO HUMAN", if the question is casual respond casual answer.
-             `
-              }
-            ]
-          }
-        ]
-
+          model: "gemini-2.5-flash",
+  
+          contents: `
+          You are a helpful AI assistant.
+  
+          PDF CONTENT:
+          ${pdfText}
+  
+          USER QUESTION:
+          ${question}
+  
+          Instructions:
+          - Answer only from provided PDF content.
+          - If no relevant data found, respond exactly:
+            "CONNECTING TO HUMAN"
+          - If user asks casual greetings, respond casually.
+          `
       });
-
-     
-
-
-
-      console.log(response.text);
-
+  
       res.json({
-        status: true,
-        data: response.text,
-        question: question,
-        message: 'successfully found message'
+          status: true,
+          data: response.text,
+          question: question,
+          message: 'successfully found message'
       });
-
-
-    } else {
+  } else {
       console.log('finding sitemap data')
       const sitemapData = await scrapeSitemapText(url);
 

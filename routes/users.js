@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const { User,Lead } = require("../models");
+const { User,Lead,Order } = require("../models");
 const multer  = require('multer')
 const bcrypt = require('bcrypt');
 const crypto = require("crypto");
@@ -8,6 +8,7 @@ const Razorpay = require("razorpay");
 const axios = require("axios");
 const nodemailer = require('nodemailer');
 const db = require("../models");
+
 
 
  const key_id = "rzp_test_SZJs8LheVmP8lm";
@@ -649,6 +650,87 @@ router.post("/get-leads", async (req, res) => {
   }
 
 });
+
+
+
+// place order 
+router.post("/place-order", async (req, res) => {
+
+
+  const {
+    amount,
+    slot,
+    qty,
+    name,
+    mobile,
+    address,city,picode,status,age,landmark
+} = req.body;
+
+
+
+  try {
+
+    // Validation
+     if (!amount || !qty || !name || !mobile || !address || !city || !picode || !status) {
+            return res.status(400).json({
+                status: false,
+                message: "All fields are required"
+            });
+        }
+
+      // Create Order
+      const order = await Order.create({
+        amount,
+        slot,
+    qty,
+    name,
+    mobile,
+    address,city,picode,status,age,landmark
+    });
+
+    return res.status(201).json({
+        status: true,
+        message: "Order added successfully",
+        data: order
+    });
+   
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      status: false,
+      message: err.message
+    });
+  }
+
+});
+
+router.get("/order-list", async (req, res) => {
+
+  try {
+
+      const orders = await Order.findAll({
+          order: [["id", "DESC"]]
+      });
+
+      return res.status(200).json({
+          status: true,
+          message: "Order list fetched successfully",
+          data: orders
+      });
+
+  } catch (err) {
+
+      console.log(err);
+
+      return res.status(500).json({
+          status: false,
+          message: err.message
+      });
+  }
+
+});
+
 
 
 
